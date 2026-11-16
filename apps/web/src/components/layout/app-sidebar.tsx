@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -81,40 +82,43 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar className="border-r border-slate-200">
-      <SidebarHeader className="border-b border-slate-200 bg-white px-5 py-6">
-     <Link
-  href="/"
-  prefetch={false}
-  className="block"
->
-  <div className="flex items-end">
-    <span className="text-[29px] font-bold leading-none tracking-[-0.06em] text-[#087b15]">
-      no
-    </span>
+    <Sidebar className="border-r border-slate-200 bg-white">
+      <SidebarHeader className="border-b border-slate-200 bg-white px-5 py-5">
+        <Link
+          href="/"
+          prefetch={false}
+          className="block"
+        >
+          <Image
+            src="/logoofc.png"
+            alt="noChurn"
+            width={220}
+            height={70}
+            priority
+            className="h-auto w-[190px] object-contain"
+          />
 
-    <span className="text-[29px] font-normal leading-none tracking-[-0.06em] text-slate-950">
-      churn
-    </span>
-  </div>
-
-  <p className="mt-2 text-[11px] font-medium tracking-wide text-slate-500">
-    Inteligência contra evasão acadêmica
-  </p>
-</Link>
+          <p className="mt-2 text-[11px] font-medium tracking-wide text-slate-500">
+            Inteligência contra evasão acadêmica
+          </p>
+        </Link>
       </SidebarHeader>
 
-      <SidebarContent className="bg-white px-2 py-3">
+      <SidebarContent className="bg-white px-2 py-4">
         {navigationGroups.map((navigationGroup) => (
-          <SidebarGroup key={navigationGroup.label}>
-            <SidebarGroupLabel className="px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+          <SidebarGroup
+            key={navigationGroup.label}
+            className="py-2"
+          >
+            <SidebarGroupLabel className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">
               {navigationGroup.label}
             </SidebarGroupLabel>
 
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="gap-1">
                 {navigationGroup.items.map((navigationItem) => {
-                  const NavigationIcon = navigationItem.icon;
+                  const NavigationIcon =
+                    navigationItem.icon;
 
                   const isActive =
                     navigationItem.href === "/"
@@ -135,9 +139,23 @@ export function AppSidebar() {
                           />
                         }
                         isActive={isActive}
-                        className="h-10 rounded-lg px-3 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 data-[active=true]:bg-green-50 data-[active=true]:font-semibold data-[active=true]:text-[#087b15]"
+                        className={`relative h-11 rounded-xl px-3 transition-all duration-200 ${
+                          isActive
+                            ? "bg-slate-100 font-semibold text-slate-950"
+                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-950"
+                        }`}
                       >
-                        <NavigationIcon className="size-4" />
+                        {isActive && (
+                          <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[#16a34a]" />
+                        )}
+
+                        <NavigationIcon
+                          className={`size-4 ${
+                            isActive
+                              ? "text-[#16a34a]"
+                              : "text-slate-500"
+                          }`}
+                        />
 
                         <span>
                           {navigationItem.title}

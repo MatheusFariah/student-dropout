@@ -16,36 +16,55 @@ import {
 import { ExplorationCharts } from "@/components/exploration/exploration-charts";
 import { getDatasetExploration } from "@/lib/api/dataset";
 
+const loadingMetricKeys = [
+  "students",
+  "courses",
+  "missing",
+  "duplicates",
+];
+
+const loadingChartKeys = [
+  "age",
+  "financial",
+  "academic",
+  "correlation",
+];
+
 async function ExplorationContent() {
-  const exploration = await getDatasetExploration();
+  const exploration =
+    await getDatasetExploration();
 
   const overviewMetrics = [
     {
       label: "Estudantes",
-      value: exploration.overview.students.toLocaleString(
-        "pt-BR",
-      ),
+      value:
+        exploration.overview.students.toLocaleString(
+          "pt-BR",
+        ),
       helper: "Registros analisados",
       icon: Database,
     },
     {
       label: "Cursos",
-      value: exploration.overview.courses.toString(),
+      value:
+        exploration.overview.courses.toString(),
       helper: "Cursos presentes na base",
       icon: Layers3,
     },
     {
       label: "Valores ausentes",
-      value: exploration.overview.missing_values.toString(),
+      value:
+        exploration.overview.missing_values.toString(),
       helper:
         exploration.overview.missing_values === 0
           ? "Nenhum valor ausente"
-          : "Registros que exigem tratamento",
+          : "Valores que exigem tratamento",
       icon: CheckCircle2,
     },
     {
       label: "Duplicidades",
-      value: exploration.overview.duplicated_rows.toString(),
+      value:
+        exploration.overview.duplicated_rows.toString(),
       helper:
         exploration.overview.duplicated_rows === 0
           ? "Nenhuma linha duplicada"
@@ -55,7 +74,7 @@ async function ExplorationContent() {
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-[1450px] flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-[1450px] flex-col gap-9">
       <section className="border-b border-slate-200 pb-7">
         <p className="text-sm font-medium text-green-700">
           Etapa 01 · Exploração dos dados
@@ -66,9 +85,9 @@ async function ExplorationContent() {
         </h1>
 
         <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-          Primeiro entendemos a qualidade da base e procuramos padrões
-          relacionados à evasão. Depois, os dados são preparados para o
-          treinamento dos modelos.
+          Primeiro analisamos a qualidade da base e buscamos diferenças
+          entre estudantes que evadiram e os que permaneceram. Depois,
+          os dados são preparados para o treinamento dos modelos.
         </p>
       </section>
 
@@ -79,20 +98,27 @@ async function ExplorationContent() {
           </p>
 
           <h2 className="mt-1 text-xl font-semibold text-slate-950">
-            Qualidade e composição da base
+            Qualidade da base
           </h2>
+
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+            Antes da análise, verificamos o tamanho da base e possíveis
+            problemas que poderiam afetar os resultados.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {overviewMetrics.map((metric) => (
-            <MetricCard
-              key={metric.label}
-              label={metric.label}
-              value={metric.value}
-              helper={metric.helper}
-              icon={metric.icon}
-            />
-          ))}
+          {overviewMetrics.map(
+            (metric) => (
+              <MetricCard
+                key={metric.label}
+                label={metric.label}
+                value={metric.value}
+                helper={metric.helper}
+                icon={metric.icon}
+              />
+            ),
+          )}
         </div>
       </section>
 
@@ -107,17 +133,77 @@ async function ExplorationContent() {
           </h2>
 
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-            Comparamos idade, situação financeira, desempenho acadêmico e
-            correlações com a evasão.
+            Comparamos idade, situação financeira e desempenho acadêmico
+            para identificar padrões relacionados à evasão.
           </p>
         </div>
 
+        <div className="mb-5 grid gap-3 md:grid-cols-3">
+          <ReadingCard
+            title="Distribuições"
+            description="Comparam como uma característica se comporta entre evasão e não evasão."
+          />
+
+          <ReadingCard
+            title="Proporções"
+            description="Mostram em quais grupos a ocorrência de evasão é maior ou menor."
+          />
+
+          <ReadingCard
+            title="Correlação"
+            description="Indica a direção e a intensidade da relação entre uma variável e a evasão."
+          />
+        </div>
+
         <ExplorationCharts
-          ageDistribution={exploration.age_distribution}
-          financialFactors={exploration.financial_factors}
-          academicPerformance={exploration.academic_performance}
-          correlations={exploration.correlations}
+          ageDistribution={
+            exploration.age_distribution
+          }
+          financialFactors={
+            exploration.financial_factors
+          }
+          academicPerformance={
+            exploration.academic_performance
+          }
+          correlations={
+            exploration.correlations
+          }
         />
+
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-semibold text-slate-900">
+            Como interpretar a correlação com a evasão?
+          </p>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <CorrelationGuide
+              value="+"
+              title="Correlação positiva"
+              description="Valores maiores da variável estão associados a maior ocorrência de evasão."
+              valueClassName="text-red-600"
+            />
+
+            <CorrelationGuide
+              value="−"
+              title="Correlação negativa"
+              description="Valores maiores da variável estão associados a menor ocorrência de evasão."
+              valueClassName="text-green-700"
+            />
+
+            <CorrelationGuide
+              value="0"
+              title="Próximo de zero"
+              description="Indica pouca relação linear entre a variável e a evasão."
+              valueClassName="text-slate-500"
+            />
+          </div>
+
+          <p className="mt-4 border-t border-slate-100 pt-4 text-xs leading-5 text-slate-400">
+            Quanto mais distante de zero, mais forte é a associação.
+            Correlação indica relação entre variáveis, mas não significa
+            que uma delas seja a causa direta da evasão.
+          </p>
+        </div>
       </section>
 
       <section>
@@ -129,17 +215,27 @@ async function ExplorationContent() {
           <h2 className="mt-1 text-xl font-semibold text-slate-950">
             O que encontramos na base?
           </h2>
+
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+            Os resultados abaixo resumem os padrões que mais se destacaram
+            durante a exploração dos dados.
+          </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           {exploration.insights.map(
-            (insight, insightIndex) => (
+            (
+              insight,
+              insightIndex,
+            ) => (
               <article
                 key={insight.title}
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
               >
                 <span className="text-xs font-semibold text-green-700">
-                  0{insightIndex + 1}
+                  {String(
+                    insightIndex + 1,
+                  ).padStart(2, "0")}
                 </span>
 
                 <h3 className="mt-3 font-semibold text-slate-950">
@@ -164,6 +260,12 @@ async function ExplorationContent() {
           <h2 className="mt-1 text-xl font-semibold text-slate-950">
             Como os dados foram preparados?
           </h2>
+
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+            Antes do treinamento, o problema foi transformado em uma
+            classificação binária e as variáveis foram convertidas para
+            um formato adequado aos modelos.
+          </p>
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -176,7 +278,11 @@ async function ExplorationContent() {
                 <span className="font-medium text-red-600">
                   Evasão:
                 </span>{" "}
-                {exploration.preparation.target.positive_class}
+                {
+                  exploration.preparation.target
+                    .positive_class
+                }{" "}
+                → 1
               </p>
 
               <p className="mt-1">
@@ -185,7 +291,12 @@ async function ExplorationContent() {
                 </span>{" "}
                 {exploration.preparation.target.negative_classes.join(
                   " + ",
-                )}
+                )}{" "}
+                → 0
+              </p>
+
+              <p className="mt-3 text-xs leading-5 text-slate-400">
+                O modelo aprende a distinguir evasão de não evasão.
               </p>
             </PreparationCard>
 
@@ -194,26 +305,36 @@ async function ExplorationContent() {
               title="Treino e teste"
             >
               <p>
-                {
-                  exploration.preparation.split
-                    .training_students
-                }{" "}
+                <span className="font-medium text-slate-700">
+                  {
+                    exploration.preparation.split
+                      .training_students
+                  }
+                </span>{" "}
                 estudantes para treino
               </p>
 
               <p className="mt-1">
-                {exploration.preparation.split.test_students} para
-                teste
+                <span className="font-medium text-slate-700">
+                  {
+                    exploration.preparation.split
+                      .test_students
+                  }
+                </span>{" "}
+                estudantes para teste
               </p>
 
-              <p className="mt-2 text-xs text-slate-400">
+              <p className="mt-3 text-xs leading-5 text-slate-400">
                 {
                   exploration.preparation.split
                     .training_percentage
                 }
                 % /{" "}
-                {exploration.preparation.split.test_percentage}%
-                estratificado
+                {
+                  exploration.preparation.split
+                    .test_percentage
+                }
+                % estratificado para manter a proporção das classes.
               </p>
             </PreparationCard>
 
@@ -222,18 +343,25 @@ async function ExplorationContent() {
               title="Variáveis categóricas"
             >
               <p>
-                {
-                  exploration.preparation.preprocessing
-                    .categorical_features
-                }{" "}
+                <span className="font-medium text-slate-700">
+                  {
+                    exploration.preparation.preprocessing
+                      .categorical_features
+                  }
+                </span>{" "}
                 atributos
               </p>
 
-              <p className="mt-1">
+              <p className="mt-1 font-medium text-slate-700">
                 {
                   exploration.preparation.preprocessing
                     .encoding
                 }
+              </p>
+
+              <p className="mt-3 text-xs leading-5 text-slate-400">
+                As categorias são transformadas em valores que o modelo
+                consegue utilizar.
               </p>
             </PreparationCard>
 
@@ -242,18 +370,25 @@ async function ExplorationContent() {
               title="Variáveis numéricas"
             >
               <p>
-                {
-                  exploration.preparation.preprocessing
-                    .numeric_features
-                }{" "}
+                <span className="font-medium text-slate-700">
+                  {
+                    exploration.preparation.preprocessing
+                      .numeric_features
+                  }
+                </span>{" "}
                 atributos
               </p>
 
-              <p className="mt-1">
+              <p className="mt-1 font-medium text-slate-700">
                 {
                   exploration.preparation.preprocessing
                     .scaling
                 }
+              </p>
+
+              <p className="mt-3 text-xs leading-5 text-slate-400">
+                Os valores são colocados em escalas comparáveis antes do
+                treinamento.
               </p>
             </PreparationCard>
           </div>
@@ -266,13 +401,21 @@ async function ExplorationContent() {
                 Base pronta para modelagem
               </p>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Após o pré-processamento, o conjunto possui{" "}
-                {
-                  exploration.preparation.preprocessing
-                    .transformed_features
-                }{" "}
-                atributos disponíveis para treinamento.
+              <p className="mt-1 max-w-4xl text-sm leading-6 text-slate-500">
+                Os{" "}
+                <span className="font-medium text-slate-700">
+                  36 atributos originais
+                </span>{" "}
+                foram preparados e, após a transformação das variáveis
+                categóricas, resultaram em{" "}
+                <span className="font-medium text-slate-700">
+                  {
+                    exploration.preparation.preprocessing
+                      .transformed_features
+                  }{" "}
+                  atributos
+                </span>{" "}
+                disponíveis para os modelos.
               </p>
             </div>
           </div>
@@ -284,10 +427,15 @@ async function ExplorationContent() {
           Conclusão
         </p>
 
-        <h2 className="mt-2 max-w-4xl text-xl font-semibold text-slate-950">
-          A base apresenta sinais relevantes de evasão e está preparada
-          para a comparação dos modelos.
+        <h2 className="mt-2 max-w-4xl text-xl font-semibold leading-8 text-slate-950">
+          A exploração revelou diferenças entre os grupos e a base está
+          pronta para a comparação dos modelos.
         </h2>
+
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+          A próxima etapa verifica se esses padrões podem ser utilizados
+          para identificar estudantes com risco de evasão.
+        </p>
       </section>
     </div>
   );
@@ -331,6 +479,62 @@ function MetricCard({
   );
 }
 
+interface ReadingCardProps {
+  title: string;
+  description: string;
+}
+
+function ReadingCard({
+  title,
+  description,
+}: ReadingCardProps) {
+  return (
+    <div className="border-l-2 border-slate-200 pl-4">
+      <p className="text-sm font-semibold text-slate-700">
+        {title}
+      </p>
+
+      <p className="mt-1 text-xs leading-5 text-slate-500">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+interface CorrelationGuideProps {
+  value: string;
+  title: string;
+  description: string;
+  valueClassName: string;
+}
+
+function CorrelationGuide({
+  value,
+  title,
+  description,
+  valueClassName,
+}: CorrelationGuideProps) {
+  return (
+    <div className="flex gap-3">
+      <div
+        className={`flex size-8 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-lg font-semibold ${valueClassName}`}
+      >
+        {value}
+      </div>
+
+      <div>
+        <p className="text-sm font-semibold text-slate-800">
+          {title}
+        </p>
+
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 interface PreparationCardProps {
   icon: ElementType;
   title: string;
@@ -365,10 +569,10 @@ function ExplorationLoading() {
       <div className="h-40 animate-pulse rounded-2xl bg-slate-200" />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map(
-          (_, metricIndex) => (
+        {loadingMetricKeys.map(
+          (metricKey) => (
             <div
-              key={metricIndex}
+              key={metricKey}
               className="h-32 animate-pulse rounded-2xl bg-slate-200"
             />
           ),
@@ -376,10 +580,10 @@ function ExplorationLoading() {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-2">
-        {Array.from({ length: 4 }).map(
-          (_, chartIndex) => (
+        {loadingChartKeys.map(
+          (chartKey) => (
             <div
-              key={chartIndex}
+              key={chartKey}
               className="h-[390px] animate-pulse rounded-2xl bg-slate-200"
             />
           ),
@@ -391,7 +595,9 @@ function ExplorationLoading() {
 
 export default function ExplorationPage() {
   return (
-    <Suspense fallback={<ExplorationLoading />}>
+    <Suspense
+      fallback={<ExplorationLoading />}
+    >
       <ExplorationContent />
     </Suspense>
   );

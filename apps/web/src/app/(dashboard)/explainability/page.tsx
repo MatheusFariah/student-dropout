@@ -1,177 +1,164 @@
 import { Suspense } from "react";
-import type { ElementType } from "react";
 
 import {
   BrainCircuit,
-  Gauge,
-  Lightbulb,
   SearchCheck,
-  Target,
 } from "lucide-react";
 
 import { ExplainabilityChart } from "@/components/explainability/explainability-chart";
 import { getExplainability } from "@/lib/api/analysis";
 
-function formatMetric(value: number) {
-  return `${(value * 100).toFixed(1).replace(".", ",")}%`;
-}
+const loadingInsightKeys = [
+  "first",
+  "second",
+  "third",
+];
 
 async function ExplainabilityContent() {
-  const explainability = await getExplainability();
-
-  const metricCards = [
-    {
-      label: "Modelo analisado",
-      value: explainability.model.name,
-      helper: "Melhor resultado entre os modelos comparados",
-      icon: BrainCircuit,
-    },
-    {
-      label: "F1-score",
-      value: formatMetric(
-        explainability.model.metrics.f1,
-      ),
-      helper: "Equilíbrio entre Precision e Recall",
-      icon: Gauge,
-    },
-    {
-      label: "Recall de evasão",
-      value: formatMetric(
-        explainability.model.metrics.recall,
-      ),
-      helper: "Evasões identificadas corretamente",
-      icon: Target,
-    },
-    {
-      label: "Amostras de teste",
-      value:
-        explainability.method.test_samples.toLocaleString(
-          "pt-BR",
-        ),
-      helper: "Registros usados na avaliação",
-      icon: SearchCheck,
-    },
-  ];
+  const explainability =
+    await getExplainability();
 
   return (
-    <div className="mx-auto flex w-full max-w-[1450px] flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-[1450px] flex-col gap-9">
       <section className="border-b border-slate-200 pb-7">
         <p className="text-sm font-medium text-green-700">
           Etapa 04 · Explicabilidade
         </p>
 
-        <div className="mt-3 max-w-4xl">
-          <h1 className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 lg:text-4xl">
-            O que mais influencia a previsão de evasão?
-          </h1>
+        <h1 className="mt-3 max-w-4xl text-3xl font-semibold tracking-[-0.04em] text-slate-950 lg:text-4xl">
+          O que mais influencia a previsão de evasão?
+        </h1>
 
-          <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-            Depois de selecionar o melhor modelo, analisamos quais
-            informações possuem maior peso em suas decisões.
-          </p>
-        </div>
+        <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
+          Depois de selecionar o melhor modelo, analisamos quais
+          informações tiveram maior influência nas previsões realizadas.
+        </p>
 
-        <div className="mt-6 flex flex-col gap-3 border-l-2 border-green-600 pl-4 sm:flex-row sm:items-center sm:gap-6">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">
-              Método
-            </p>
+        <div className="mt-6 flex flex-wrap gap-x-8 gap-y-4 border-l-2 border-green-600 pl-4 text-sm text-slate-500">
+          <AnalysisInfo
+            label="Modelo"
+            value={
+              explainability.model.name
+            }
+          />
 
-            <p className="mt-1 text-sm font-semibold text-slate-900">
-              {explainability.method.name}
-            </p>
-          </div>
+          <AnalysisInfo
+            label="Método"
+            value={
+              explainability.method.name
+            }
+          />
 
-          <div className="hidden h-8 w-px bg-slate-200 sm:block" />
-
-          <p className="max-w-2xl text-sm leading-6 text-slate-500">
-            {explainability.method.description}.
-          </p>
-        </div>
-      </section>
-
-      <section>
-        <div className="mb-4">
-          <p className="text-sm font-medium text-slate-400">
-            Modelo utilizado
-          </p>
-
-          <h2 className="mt-1 text-xl font-semibold text-slate-950">
-            Contexto da análise
-          </h2>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {metricCards.map((metric) => (
-            <MetricCard
-              key={metric.label}
-              label={metric.label}
-              value={metric.value}
-              helper={metric.helper}
-              icon={metric.icon}
-            />
-          ))}
+          <AnalysisInfo
+            label="Amostras analisadas"
+            value={explainability.method.test_samples.toLocaleString(
+              "pt-BR",
+            )}
+          />
         </div>
       </section>
 
       <section>
-        <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-medium text-slate-400">
-              Resultado
+              Importância das variáveis
             </p>
 
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
-              Variáveis mais relevantes para o modelo
+              Em quais informações o modelo mais se apoia?
             </h2>
+
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+              Cada barra representa a importância relativa de uma variável
+              para a decisão do modelo.
+            </p>
           </div>
 
-          <p className="max-w-xl text-sm leading-6 text-slate-500">
-            Quanto maior a barra, maior a participação relativa da
-            variável nas decisões realizadas pelo modelo.
-          </p>
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <SearchCheck className="size-4 text-green-700" />
+
+            Quanto maior a barra, maior a influência
+          </div>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <ExplainabilityChart
-            features={explainability.features}
+            features={
+              explainability.features
+            }
           />
 
-          <div className="mt-4 border-t border-slate-100 pt-4">
-            <p className="text-xs leading-5 text-slate-400">
-              A importância indica relevância para a previsão e não
-              necessariamente uma relação de causa com a evasão.
+          <div className="mt-5 grid gap-4 border-t border-slate-100 pt-5 md:grid-cols-3">
+            <InterpretationItem
+              title="Barra maior"
+              description="A variável teve maior peso nas decisões do modelo."
+            />
+
+            <InterpretationItem
+              title="Barra menor"
+              description="A variável teve menor influência sobre a previsão."
+            />
+
+            <InterpretationItem
+              title="Importante"
+              description="Não significa que a variável seja a causa da evasão."
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-6">
+        <div className="flex gap-4">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white">
+            <BrainCircuit className="size-5 text-slate-600" />
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-slate-900">
+              Um ponto importante sobre este gráfico
+            </p>
+
+            <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-500">
+              A importância mostra quanto uma variável influencia a
+              previsão, mas não indica sozinha se ela aumenta ou reduz o
+              risco de evasão. O gráfico mostra principalmente quais
+              informações o modelo mais considera.
             </p>
           </div>
         </div>
       </section>
 
       <section>
-        <div className="mb-5 flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-green-50">
-            <Lightbulb className="size-4 text-green-700" />
-          </div>
+        <div className="mb-5">
+          <p className="text-sm font-medium text-green-700">
+            Principais fatores
+          </p>
 
-          <div>
-            <p className="text-sm font-medium text-green-700">
-              Interpretação
-            </p>
+          <h2 className="mt-1 text-xl font-semibold text-slate-950">
+            Quais variáveis mais pesaram na decisão?
+          </h2>
 
-            <h2 className="text-xl font-semibold text-slate-950">
-              Principais descobertas
-            </h2>
-          </div>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+            As três primeiras posições representam as variáveis com maior
+            importância relativa entre as analisadas.
+          </p>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
           {explainability.insights.map(
-            (insight, insightIndex) => (
+            (
+              insight,
+              insightIndex,
+            ) => (
               <article
                 key={insight.feature}
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
               >
                 <span className="text-xs font-semibold text-green-700">
-                  0{insightIndex + 1}
+                  {String(
+                    insightIndex + 1,
+                  ).padStart(2, "0")}
                 </span>
 
                 <h3 className="mt-4 text-lg font-semibold text-slate-950">
@@ -188,60 +175,62 @@ async function ExplainabilityContent() {
       </section>
 
       <section className="border-t border-slate-200 py-7">
-        <div className="max-w-4xl">
-          <p className="text-sm font-medium text-green-700">
-            Conclusão
-          </p>
+        <p className="text-sm font-medium text-green-700">
+          Conclusão
+        </p>
 
-          <h2 className="mt-2 text-xl font-semibold text-slate-950">
-            O modelo não apenas prevê risco, mas permite entender
-            quais fatores sustentam suas decisões.
-          </h2>
+        <h2 className="mt-2 max-w-4xl text-xl font-semibold leading-8 text-slate-950">
+          A análise mostra quais informações tiveram maior influência nas
+          previsões do modelo.
+        </h2>
 
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Isso torna o resultado mais transparente e mais útil para
-            apoiar estratégias de acompanhamento dos estudantes.
-          </p>
-        </div>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+          Isso torna o resultado mais transparente e ajuda a entender em
+          quais características o modelo se apoia ao identificar risco de
+          evasão.
+        </p>
       </section>
     </div>
   );
 }
 
-interface MetricCardProps {
+interface AnalysisInfoProps {
   label: string;
   value: string;
-  helper: string;
-  icon: ElementType;
 }
 
-function MetricCard({
+function AnalysisInfo({
   label,
   value,
-  helper,
-  icon: MetricIcon,
-}: MetricCardProps) {
+}: AnalysisInfoProps) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm text-slate-500">
-            {label}
-          </p>
+    <p>
+      {label}:{" "}
+      <span className="font-semibold text-slate-900">
+        {value}
+      </span>
+    </p>
+  );
+}
 
-          <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
-            {value}
-          </p>
+interface InterpretationItemProps {
+  title: string;
+  description: string;
+}
 
-          <p className="mt-2 text-sm leading-5 text-slate-500">
-            {helper}
-          </p>
-        </div>
+function InterpretationItem({
+  title,
+  description,
+}: InterpretationItemProps) {
+  return (
+    <div>
+      <p className="text-sm font-semibold text-slate-800">
+        {title}
+      </p>
 
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-slate-50">
-          <MetricIcon className="size-4 text-slate-500" />
-        </div>
-      </div>
+      <p className="mt-1 text-xs leading-5 text-slate-500">
+        {description}
+      </p>
     </div>
   );
 }
@@ -251,24 +240,13 @@ function ExplainabilityLoading() {
     <div className="mx-auto flex w-full max-w-[1450px] flex-col gap-8">
       <div className="h-44 animate-pulse rounded-2xl bg-slate-200" />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map(
-          (_, metricIndex) => (
-            <div
-              key={metricIndex}
-              className="h-32 animate-pulse rounded-2xl bg-slate-200"
-            />
-          ),
-        )}
-      </div>
-
       <div className="h-[520px] animate-pulse rounded-2xl bg-slate-200" />
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map(
-          (_, insightIndex) => (
+        {loadingInsightKeys.map(
+          (insightKey) => (
             <div
-              key={insightIndex}
+              key={insightKey}
               className="h-48 animate-pulse rounded-2xl bg-slate-200"
             />
           ),
@@ -280,7 +258,11 @@ function ExplainabilityLoading() {
 
 export default function ExplainabilityPage() {
   return (
-    <Suspense fallback={<ExplainabilityLoading />}>
+    <Suspense
+      fallback={
+        <ExplainabilityLoading />
+      }
+    >
       <ExplainabilityContent />
     </Suspense>
   );

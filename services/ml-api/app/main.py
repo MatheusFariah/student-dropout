@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 from functools import lru_cache
 
@@ -23,6 +24,22 @@ logging.basicConfig(
 logger = logging.getLogger("nochurn")
 
 
+frontend_url = os.getenv(
+    "FRONTEND_URL",
+    "http://localhost:3000",
+).rstrip("/")
+
+allowed_origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+if frontend_url not in allowed_origins:
+    allowed_origins.append(
+        frontend_url
+    )
+
+
 app = FastAPI(
     title="noChurn API",
     version="1.0.0",
@@ -30,12 +47,14 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_credentials=False,
+    allow_methods=[
+        "GET",
+        "POST",
+        "OPTIONS",
     ],
-    allow_credentials=True,
-    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -153,20 +172,29 @@ def get_dataset_exploration() -> dict:
     )
 
 
+@app.get("/")
+def root():
+    return {
+        "name": "noChurn API",
+        "status": "online",
+        "docs": "/docs",
+    }
+
+
 @app.get("/health")
-async def health():
+def health():
     return {
         "status": "ok",
     }
 
 
 @app.get("/api/dataset/summary")
-async def dataset_summary():
+def dataset_summary():
     return get_dataset_summary()
 
 
 @app.get("/api/dataset/exploration")
-async def dataset_exploration():
+def dataset_exploration():
     return get_dataset_exploration()
 
 

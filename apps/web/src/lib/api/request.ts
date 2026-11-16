@@ -9,8 +9,11 @@ export async function fetchApi<ReturnType>(
   options: ApiRequestOptions = {},
 ): Promise<ReturnType> {
   const apiUrl =
-    process.env.API_URL ??
+    process.env.NEXT_PUBLIC_API_URL ??
     "http://127.0.0.1:8000";
+
+  const normalizedApiUrl =
+    apiUrl.replace(/\/$/, "");
 
   const timeout =
     options.timeout ?? 30000;
@@ -19,7 +22,7 @@ export async function fetchApi<ReturnType>(
     options.method ?? "GET";
 
   const requestUrl =
-    `${apiUrl}${path}`;
+    `${normalizedApiUrl}${path}`;
 
   const requestStartedAt =
     performance.now();

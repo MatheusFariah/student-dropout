@@ -13,6 +13,13 @@ import { RocCurveChart } from "@/components/evaluation/roc-curve-chart";
 import { StageExperiment } from "@/components/evaluation/stage-experiment";
 import { getEvaluation } from "@/lib/api/evaluation";
 
+const loadingMetricKeys = [
+  "precision",
+  "recall",
+  "f1",
+  "auc",
+];
+
 function formatMetric(value: number) {
   return `${(value * 100)
     .toFixed(1)
@@ -20,7 +27,20 @@ function formatMetric(value: number) {
 }
 
 async function EvaluationContent() {
-  const evaluation = await getEvaluation();
+  const evaluation =
+    await getEvaluation();
+
+  const truePositive =
+    evaluation.confusion_matrix.true_positive;
+
+  const trueNegative =
+    evaluation.confusion_matrix.true_negative;
+
+  const falsePositive =
+    evaluation.confusion_matrix.false_positive;
+
+  const falseNegative =
+    evaluation.confusion_matrix.false_negative;
 
   const metrics = [
     {
@@ -28,7 +48,8 @@ async function EvaluationContent() {
       value: formatMetric(
         evaluation.metrics.precision,
       ),
-      helper: "Dos alertas, quantos eram evasão",
+      helper:
+        "Dos alertas emitidos, quantos estavam corretos",
       icon: SearchCheck,
     },
     {
@@ -36,7 +57,8 @@ async function EvaluationContent() {
       value: formatMetric(
         evaluation.metrics.recall,
       ),
-      helper: "Das evasões reais, quantas encontramos",
+      helper:
+        "Das evasões reais, quantas foram identificadas",
       icon: Target,
     },
     {
@@ -44,7 +66,8 @@ async function EvaluationContent() {
       value: formatMetric(
         evaluation.metrics.f1,
       ),
-      helper: "Equilíbrio entre Precision e Recall",
+      helper:
+        "Equilíbrio entre Precision e Recall",
       icon: Gauge,
     },
     {
@@ -52,13 +75,14 @@ async function EvaluationContent() {
       value: formatMetric(
         evaluation.metrics.roc_auc,
       ),
-      helper: "Capacidade de separar as classes",
+      helper:
+        "Capacidade de separar as duas classes",
       icon: CheckCircle2,
     },
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-[1450px] flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-[1450px] flex-col gap-9">
       <section className="border-b border-slate-200 pb-7">
         <p className="text-sm font-medium text-green-700">
           Etapa 03 · Avaliação
@@ -69,8 +93,9 @@ async function EvaluationContent() {
         </h1>
 
         <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-          O modelo selecionado é avaliado somente nos estudantes
-          reservados para teste, que não participaram do treinamento.
+          O modelo selecionado é avaliado sobre estudantes que não
+          participaram do treinamento. Assim podemos medir seu desempenho
+          sobre dados ainda não vistos.
         </p>
 
         <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3 border-l-2 border-green-600 pl-4 text-sm text-slate-500">
@@ -100,6 +125,22 @@ async function EvaluationContent() {
             </span>
           </p>
         </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <ThresholdItem
+            value={`≥ ${formatMetric(
+              evaluation.threshold,
+            )}`}
+            label="Previsão de evasão"
+          />
+
+          <ThresholdItem
+            value={`< ${formatMetric(
+              evaluation.threshold,
+            )}`}
+            label="Previsão de não evasão"
+          />
+        </div>
       </section>
 
       <section>
@@ -111,18 +152,25 @@ async function EvaluationContent() {
           <h2 className="mt-1 text-xl font-semibold text-slate-950">
             Métricas principais
           </h2>
+
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+            Cada métrica observa um aspecto diferente do desempenho.
+            Por isso, não avaliamos o modelo por apenas um único número.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {metrics.map((metric) => (
-            <MetricCard
-              key={metric.label}
-              label={metric.label}
-              value={metric.value}
-              helper={metric.helper}
-              icon={metric.icon}
-            />
-          ))}
+          {metrics.map(
+            (metric) => (
+              <MetricCard
+                key={metric.label}
+                label={metric.label}
+                value={metric.value}
+                helper={metric.helper}
+                icon={metric.icon}
+              />
+            ),
+          )}
         </div>
       </section>
 
@@ -137,24 +185,24 @@ async function EvaluationContent() {
           </h2>
 
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-            Aqui vemos exatamente quais estudantes foram classificados
-            corretamente e onde o modelo ainda errou.
+            Antes de calcular as métricas, comparamos a previsão do modelo
+            com o resultado real de cada estudante.
           </p>
         </div>
 
         <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
           <ConfusionMatrix
             trueNegative={
-              evaluation.confusion_matrix.true_negative
+              trueNegative
             }
             falsePositive={
-              evaluation.confusion_matrix.false_positive
+              falsePositive
             }
             falseNegative={
-              evaluation.confusion_matrix.false_negative
+              falseNegative
             }
             truePositive={
-              evaluation.confusion_matrix.true_positive
+              truePositive
             }
           />
 
@@ -195,6 +243,138 @@ async function EvaluationContent() {
       </section>
 
       <section>
+        <div className="mb-5">
+          <p className="text-sm font-medium text-slate-400">
+            Base das métricas
+          </p>
+
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
+            O que significam VP, FP, FN e VN?
+          </h2>
+
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+            Esses quatro resultados da matriz de confusão são utilizados
+            diretamente no cálculo de Precision e Recall.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <ConfusionDefinition
+            abbreviation="VP"
+            title="Verdadeiro positivo"
+            value={
+              truePositive
+            }
+            description="Era evasão e o modelo identificou corretamente como evasão."
+            variant="success"
+          />
+
+          <ConfusionDefinition
+            abbreviation="FP"
+            title="Falso positivo"
+            value={
+              falsePositive
+            }
+            description="Não era evasão, mas o modelo gerou um alerta."
+            variant="warning"
+          />
+
+          <ConfusionDefinition
+            abbreviation="FN"
+            title="Falso negativo"
+            value={
+              falseNegative
+            }
+            description="Era evasão, mas o modelo não conseguiu identificar."
+            variant="danger"
+          />
+
+          <ConfusionDefinition
+            abbreviation="VN"
+            title="Verdadeiro negativo"
+            value={
+              trueNegative
+            }
+            description="Não era evasão e o modelo classificou corretamente."
+            variant="neutral"
+          />
+        </div>
+      </section>
+
+      <section>
+        <div className="mb-5">
+          <p className="text-sm font-medium text-green-700">
+            Cálculo das métricas
+          </p>
+
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
+            De onde vêm Precision, Recall e F1?
+          </h2>
+
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+            As porcentagens apresentadas pelo sistema são calculadas a
+            partir dos próprios valores encontrados na matriz de confusão.
+          </p>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <MetricFormulaCard
+            title="Precision"
+            question="Quando o modelo alerta, ele acerta?"
+            formula="VP / (VP + FP)"
+            calculation={`${truePositive} / (${truePositive} + ${falsePositive})`}
+            result={formatMetric(
+              evaluation.metrics.precision,
+            )}
+            description="Mede a qualidade dos alertas de evasão emitidos pelo modelo."
+          />
+
+          <MetricFormulaCard
+            title="Recall"
+            question="Das evasões reais, quantas encontramos?"
+            formula="VP / (VP + FN)"
+            calculation={`${truePositive} / (${truePositive} + ${falseNegative})`}
+            result={formatMetric(
+              evaluation.metrics.recall,
+            )}
+            description="Mede a capacidade de localizar estudantes que realmente evadiram."
+            highlighted
+          />
+
+          <MetricFormulaCard
+            title="F1-score"
+            question="Existe equilíbrio entre os dois?"
+            formula="2 × (Precision × Recall) / (Precision + Recall)"
+            calculation={`2 × (${formatMetric(
+              evaluation.metrics.precision,
+            )} × ${formatMetric(
+              evaluation.metrics.recall,
+            )}) / (${formatMetric(
+              evaluation.metrics.precision,
+            )} + ${formatMetric(
+              evaluation.metrics.recall,
+            )})`}
+            result={formatMetric(
+              evaluation.metrics.f1,
+            )}
+            description="Combina Precision e Recall em uma única medida."
+          />
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-green-200 bg-green-50/60 px-5 py-4">
+          <p className="text-sm font-semibold text-green-800">
+            Por que usamos F1 para escolher o melhor modelo?
+          </p>
+
+          <p className="mt-1 max-w-4xl text-sm leading-6 text-slate-600">
+            Um modelo poderia ter alta Precision e baixo Recall, ou o
+            contrário. O F1 penaliza esse desequilíbrio e favorece modelos
+            que conseguem manter bons resultados nas duas métricas.
+          </p>
+        </div>
+      </section>
+
+      <section>
         <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-medium text-slate-400">
@@ -202,30 +382,51 @@ async function EvaluationContent() {
             </p>
 
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
-              Curva ROC
+              Curva ROC e ROC-AUC
             </h2>
           </div>
 
           <p className="max-w-xl text-sm leading-6 text-slate-500">
-            Quanto mais a curva se aproxima do canto superior esquerdo,
-            melhor o modelo separa evasão de não evasão.
+            Em vez de observar somente o limiar de 50%, a curva testa
+            vários limiares de classificação.
           </p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <RocCurveChart
-            curve={evaluation.roc_curve}
+            curve={
+              evaluation.roc_curve
+            }
           />
 
-          <div className="mt-4 border-t border-slate-100 pt-4">
-            <p className="text-sm text-slate-500">
-              ROC-AUC:{" "}
-              <span className="font-semibold text-slate-900">
-                {formatMetric(
-                  evaluation.metrics.roc_auc,
-                )}
-              </span>
-            </p>
+          <div className="mt-5 grid gap-5 border-t border-slate-100 pt-5 md:grid-cols-2">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">
+                Curva ROC
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Compara a taxa de verdadeiros positivos com a taxa de
+                falsos positivos em diferentes valores de limiar.
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold text-slate-800">
+                ROC-AUC ·{" "}
+                <span className="text-green-700">
+                  {formatMetric(
+                    evaluation.metrics.roc_auc,
+                  )}
+                </span>
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Representa a área sob a curva. Quanto mais próximo de
+                100%, melhor o modelo consegue separar evasão de não
+                evasão.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -243,7 +444,7 @@ async function EvaluationContent() {
           Conclusão da avaliação
         </p>
 
-        <h2 className="mt-2 max-w-4xl text-xl font-semibold text-slate-950">
+        <h2 className="mt-2 max-w-4xl text-xl font-semibold leading-8 text-slate-950">
           O modelo identifica{" "}
           {evaluation.summary.detection_rate
             .toFixed(1)
@@ -252,11 +453,32 @@ async function EvaluationContent() {
         </h2>
 
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-          Os resultados permitem transformar a previsão em um sistema
-          de alerta, mantendo os erros e limitações visíveis para quem
-          toma a decisão.
+          Além das métricas finais, conseguimos mostrar exatamente quais
+          acertos e erros deram origem a esses resultados.
         </p>
       </section>
+    </div>
+  );
+}
+
+interface ThresholdItemProps {
+  value: string;
+  label: string;
+}
+
+function ThresholdItem({
+  value,
+  label,
+}: ThresholdItemProps) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="font-mono text-sm font-semibold text-slate-900">
+        {value}
+      </span>
+
+      <span className="text-sm text-slate-500">
+        {label}
+      </span>
     </div>
   );
 }
@@ -330,13 +552,17 @@ function ConfusionMatrix({
         </MatrixHeader>
 
         <MatrixCell
-          value={trueNegative}
+          value={
+            trueNegative
+          }
           title="Acerto"
           variant="success"
         />
 
         <MatrixCell
-          value={falsePositive}
+          value={
+            falsePositive
+          }
           title="Falso alerta"
           variant="warning"
         />
@@ -346,13 +572,17 @@ function ConfusionMatrix({
         </MatrixHeader>
 
         <MatrixCell
-          value={falseNegative}
+          value={
+            falseNegative
+          }
           title="Evasão perdida"
           variant="danger"
         />
 
         <MatrixCell
-          value={truePositive}
+          value={
+            truePositive
+          }
           title="Evasão identificada"
           variant="success"
         />
@@ -378,7 +608,10 @@ function MatrixHeader({
 interface MatrixCellProps {
   value: number;
   title: string;
-  variant: "success" | "warning" | "danger";
+  variant:
+    | "success"
+    | "warning"
+    | "danger";
 }
 
 function MatrixCell({
@@ -407,6 +640,127 @@ function MatrixCell({
         {title}
       </p>
     </div>
+  );
+}
+
+interface ConfusionDefinitionProps {
+  abbreviation: string;
+  title: string;
+  value: number;
+  description: string;
+  variant:
+    | "success"
+    | "warning"
+    | "danger"
+    | "neutral";
+}
+
+function ConfusionDefinition({
+  abbreviation,
+  title,
+  value,
+  description,
+  variant,
+}: ConfusionDefinitionProps) {
+  const abbreviationStyles = {
+    success:
+      "text-green-700",
+    warning:
+      "text-amber-600",
+    danger:
+      "text-red-600",
+    neutral:
+      "text-slate-600",
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-4">
+        <span
+          className={`text-xs font-semibold ${abbreviationStyles[variant]}`}
+        >
+          {abbreviation}
+        </span>
+
+        <span className="text-xl font-semibold text-slate-950">
+          {value}
+        </span>
+      </div>
+
+      <p className="mt-4 text-sm font-semibold text-slate-800">
+        {title}
+      </p>
+
+      <p className="mt-1 text-xs leading-5 text-slate-500">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+interface MetricFormulaCardProps {
+  title: string;
+  question: string;
+  formula: string;
+  calculation: string;
+  result: string;
+  description: string;
+  highlighted?: boolean;
+}
+
+function MetricFormulaCard({
+  title,
+  question,
+  formula,
+  calculation,
+  result,
+  description,
+  highlighted = false,
+}: MetricFormulaCardProps) {
+  return (
+    <article
+      className={`rounded-2xl border bg-white p-6 shadow-sm ${
+        highlighted
+          ? "border-green-300 ring-1 ring-green-100"
+          : "border-slate-200"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs text-slate-400">
+            {question}
+          </p>
+
+          <h3 className="mt-1 text-lg font-semibold text-slate-950">
+            {title}
+          </h3>
+        </div>
+
+        <span
+          className={`text-xl font-semibold ${
+            highlighted
+              ? "text-green-700"
+              : "text-slate-950"
+          }`}
+        >
+          {result}
+        </span>
+      </div>
+
+      <div className="mt-4 rounded-xl bg-slate-50 p-4">
+        <p className="font-mono text-sm font-semibold text-slate-800">
+          {formula}
+        </p>
+
+        <p className="mt-2 break-words font-mono text-xs text-slate-500">
+          {calculation}
+        </p>
+      </div>
+
+      <p className="mt-4 text-sm leading-6 text-slate-500">
+        {description}
+      </p>
+    </article>
   );
 }
 
@@ -456,12 +810,14 @@ function EvaluationLoading() {
       <div className="h-44 animate-pulse rounded-2xl bg-slate-200" />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[0, 1, 2, 3].map((metricIndex) => (
-          <div
-            key={metricIndex}
-            className="h-36 animate-pulse rounded-2xl bg-slate-200"
-          />
-        ))}
+        {loadingMetricKeys.map(
+          (metricKey) => (
+            <div
+              key={metricKey}
+              className="h-36 animate-pulse rounded-2xl bg-slate-200"
+            />
+          ),
+        )}
       </div>
 
       <div className="h-[430px] animate-pulse rounded-2xl bg-slate-200" />
@@ -471,7 +827,11 @@ function EvaluationLoading() {
 
 export default function EvaluationPage() {
   return (
-    <Suspense fallback={<EvaluationLoading />}>
+    <Suspense
+      fallback={
+        <EvaluationLoading />
+      }
+    >
       <EvaluationContent />
     </Suspense>
   );

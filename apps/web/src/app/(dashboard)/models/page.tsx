@@ -104,9 +104,9 @@ async function ModelsContent() {
         </h1>
 
         <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-          Treinamos três abordagens utilizando a mesma divisão dos dados.
-          O objetivo é verificar quais modelos realmente conseguem
-          aprender padrões de evasão e superar uma referência simples.
+          Treinamos três algoritmos sobre os mesmos dados para verificar
+          quais conseguem aprender padrões de evasão e superar uma
+          referência simples.
         </p>
 
         <div className="mt-7 grid gap-5 sm:grid-cols-3">
@@ -131,8 +131,8 @@ async function ModelsContent() {
         </div>
 
         <p className="mt-4 text-xs leading-5 text-slate-400">
-          Os três algoritmos receberam exatamente o mesmo conjunto de
-          treino e foram avaliados sobre os mesmos estudantes de teste.
+          Todos os algoritmos utilizaram a mesma divisão dos dados,
+          permitindo uma comparação justa entre os resultados.
         </p>
       </section>
 
@@ -147,9 +147,9 @@ async function ModelsContent() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            O primeiro modelo funciona apenas como referência. Os outros
-            dois precisam superá-lo para mostrar que realmente aprenderam
-            informações úteis sobre a evasão.
+            O baseline fornece uma referência mínima, enquanto os modelos
+            preditivos tentam aprender relações existentes entre os
+            atributos dos estudantes e a evasão.
           </p>
         </div>
 
@@ -166,6 +166,65 @@ async function ModelsContent() {
       </section>
 
       <section>
+        <div className="mb-6">
+          <p className="text-sm font-medium text-slate-400">
+            Funcionamento
+          </p>
+
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
+            Como cada modelo chega à previsão?
+          </h2>
+
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+            Os dados de entrada são os mesmos. O que muda é a estratégia
+            matemática utilizada para transformar essas informações em
+            uma classificação.
+          </p>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          <TechnicalModelCard
+            title="DummyClassifier"
+            subtitle="Baseline"
+            formula="ŷ = classe mais frequente"
+            description="Não aprende relações entre os atributos. Apenas identifica qual classe aparece mais vezes no conjunto de treino."
+            evidence="Como não evasão é a classe majoritária, o modelo responde não evasão para todos os estudantes."
+          />
+
+          <TechnicalModelCard
+            title="Regressão Logística"
+            subtitle="Probabilidade"
+            formula="z = β₀ + β₁x₁ + ... + βₙxₙ"
+            secondaryFormula="p = 1 / (1 + e⁻ᶻ)"
+            description="Combina os atributos do estudante e transforma o resultado em uma probabilidade entre 0 e 1."
+            evidence="Com limiar de 50%, probabilidade igual ou superior a 0,50 gera previsão de evasão."
+            highlighted
+          />
+
+          <TechnicalModelCard
+            title="Árvore de Decisão"
+            subtitle="Regras de decisão"
+            formula="Gini = 1 − Σ pₖ²"
+            description="Cria divisões sucessivas dos dados buscando grupos cada vez mais homogêneos em relação às classes."
+            evidence="A árvore escolhe atributos e pontos de corte que melhor separam evasão e não evasão."
+          />
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/60 px-5 py-4">
+          <p className="text-sm font-semibold text-slate-800">
+            Em resumo
+          </p>
+
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            O Dummy serve como referência, a Regressão Logística calcula
+            probabilidades e a Árvore de Decisão cria regras. O melhor
+            modelo é escolhido comparando o desempenho obtido no conjunto
+            de teste.
+          </p>
+        </div>
+      </section>
+
+      <section>
         <div className="mb-6 flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="text-sm font-medium text-slate-400">
@@ -177,21 +236,20 @@ async function ModelsContent() {
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              As três métricas ajudam a entender não apenas quantos casos
-              o modelo acertou, mas principalmente sua capacidade de
-              encontrar estudantes que realmente evadiram.
+              As métricas avaliam tanto a qualidade dos alertas quanto a
+              capacidade de localizar estudantes que realmente evadiram.
             </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3 xl:max-w-2xl">
             <MetricExplanation
               label="Precision"
-              description="Entre os alertas emitidos, quantos estavam corretos."
+              description="Dos alertas de evasão, quantos estavam corretos."
             />
 
             <MetricExplanation
               label="Recall"
-              description="Entre as evasões reais, quantas foram encontradas."
+              description="Das evasões reais, quantas foram identificadas."
             />
 
             <MetricExplanation
@@ -208,9 +266,9 @@ async function ModelsContent() {
         </div>
 
         <p className="mt-3 text-xs leading-5 text-slate-400">
-          Neste problema, Recall merece atenção especial porque representa
-          quantos estudantes que realmente evadiram foram identificados
-          pelo modelo.
+          Neste problema, Recall é especialmente importante porque uma
+          evasão não identificada representa um estudante em risco que não
+          receberia alerta.
         </p>
       </section>
 
@@ -231,8 +289,8 @@ async function ModelsContent() {
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
               Entre os modelos preditivos avaliados, apresentou o melhor
-              equilíbrio entre qualidade dos alertas e identificação das
-              evasões. Por isso, será utilizado nas próximas etapas.
+              F1-score e, portanto, o melhor equilíbrio entre Precision e
+              Recall.
             </p>
           </div>
 
@@ -267,14 +325,14 @@ async function ModelsContent() {
         </p>
 
         <h2 className="mt-2 max-w-4xl text-xl font-semibold leading-8 text-slate-950">
-          Os modelos preditivos conseguiram aprender padrões que não são
-          capturados pelo baseline.
+          Os modelos preditivos superaram o baseline, mostrando que os
+          atributos possuem informação útil para identificar risco de
+          evasão.
         </h2>
 
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
           Com o melhor modelo escolhido, a próxima etapa analisa seus
-          acertos, erros e a capacidade real de identificar estudantes em
-          risco.
+          acertos e erros de forma mais detalhada.
         </p>
       </section>
     </div>
@@ -362,10 +420,8 @@ function ModelCard({
           </p>
 
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            Como o DummyClassifier classifica todos os estudantes como
-            “não evasão”, ele nunca gera uma previsão de evasão. Assim,
-            nenhuma evasão real é identificada e Precision, Recall e F1
-            ficam em 0%.
+            Como todos são classificados como “não evasão”, nenhuma
+            evasão é prevista. Assim, Precision, Recall e F1 ficam em 0%.
           </p>
         </div>
       )}
@@ -391,6 +447,76 @@ function ModelCard({
             model.metrics.f1
           }
         />
+      </div>
+    </article>
+  );
+}
+
+interface TechnicalModelCardProps {
+  title: string;
+  subtitle: string;
+  formula: string;
+  secondaryFormula?: string;
+  description: string;
+  evidence: string;
+  highlighted?: boolean;
+}
+
+function TechnicalModelCard({
+  title,
+  subtitle,
+  formula,
+  secondaryFormula,
+  description,
+  evidence,
+  highlighted = false,
+}: TechnicalModelCardProps) {
+  return (
+    <article
+      className={`rounded-2xl border bg-white p-6 shadow-sm ${
+        highlighted
+          ? "border-green-200"
+          : "border-slate-200"
+      }`}
+    >
+      <p
+        className={`text-xs font-semibold uppercase tracking-[0.12em] ${
+          highlighted
+            ? "text-green-700"
+            : "text-slate-400"
+        }`}
+      >
+        {subtitle}
+      </p>
+
+      <h3 className="mt-2 text-lg font-semibold text-slate-950">
+        {title}
+      </h3>
+
+      <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3">
+        <p className="font-mono text-sm font-medium text-slate-800">
+          {formula}
+        </p>
+
+        {secondaryFormula && (
+          <p className="mt-1 font-mono text-sm font-medium text-slate-800">
+            {secondaryFormula}
+          </p>
+        )}
+      </div>
+
+      <p className="mt-4 text-sm leading-6 text-slate-500">
+        {description}
+      </p>
+
+      <div className="mt-4 border-t border-slate-100 pt-4">
+        <p className="text-xs font-semibold text-slate-700">
+          Na prática
+        </p>
+
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          {evidence}
+        </p>
       </div>
     </article>
   );

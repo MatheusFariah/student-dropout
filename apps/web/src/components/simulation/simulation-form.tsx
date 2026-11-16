@@ -6,8 +6,11 @@ import type { FormEvent } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
+  Info,
   LoaderCircle,
+  RefreshCcw,
   ShieldCheck,
+  Target,
   TrendingUp,
 } from "lucide-react";
 
@@ -36,6 +39,17 @@ function formatProbability(
   return `${(value * 100)
     .toFixed(1)
     .replace(".", ",")}%`;
+}
+
+function formatDifference(
+  value: number,
+) {
+  const percentage =
+    Math.abs(value * 100);
+
+  return `${percentage
+    .toFixed(1)
+    .replace(".", ",")} p.p.`;
 }
 
 export function SimulationForm() {
@@ -72,8 +86,7 @@ export function SimulationForm() {
     setSimulationInput(
       (currentInput) => ({
         ...currentInput,
-        [fieldName]:
-          Number(value),
+        [fieldName]: Number(value),
       }),
     );
   }
@@ -88,6 +101,15 @@ export function SimulationForm() {
         [fieldName]: value,
       }),
     );
+  }
+
+  function resetSimulation() {
+    setSimulationInput(
+      initialSimulation,
+    );
+
+    setSimulationResult(null);
+    setErrorMessage(null);
   }
 
   async function handleSubmit(
@@ -124,19 +146,48 @@ export function SimulationForm() {
         onSubmit={handleSubmit}
         className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
       >
-        <div>
-          <h2 className="text-xl font-semibold text-slate-950">
-            Perfil do estudante
-          </h2>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-950">
+              Perfil do estudante
+            </h2>
 
-          <p className="mt-1 text-sm text-slate-500">
-            Informe os principais dados usados pelo modelo.
-          </p>
+            <p className="mt-1 text-sm text-slate-500">
+              Altere os principais atributos utilizados na simulação.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={resetSimulation}
+            className="flex shrink-0 items-center gap-2 text-xs font-medium text-slate-500 transition hover:text-slate-900"
+          >
+            <RefreshCcw className="size-3.5" />
+
+            Restaurar exemplo
+          </button>
+        </div>
+
+        <div className="mt-5 flex gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <Info className="mt-0.5 size-4 shrink-0 text-slate-500" />
+
+          <div>
+            <p className="text-xs font-semibold text-slate-700">
+              Perfil inicial de demonstração
+            </p>
+
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              Os valores preenchidos inicialmente são apenas um exemplo
+              para facilitar a simulação. Eles podem ser alterados e não
+              representam médias ou medianas da base.
+            </p>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <NumberField
             label="Idade na matrícula"
+            helper="Idade do estudante no momento do ingresso"
             value={
               simulationInput
                 .age_at_enrollment
@@ -154,6 +205,7 @@ export function SimulationForm() {
 
           <NumberField
             label="Nota de admissão"
+            helper="Escala original da base: 0 a 200"
             value={
               simulationInput
                 .admission_grade
@@ -171,6 +223,7 @@ export function SimulationForm() {
 
           <NumberField
             label="Aprovações no 1º semestre"
+            helper="Disciplinas aprovadas no período"
             value={
               simulationInput
                 .first_sem_approved
@@ -188,6 +241,7 @@ export function SimulationForm() {
 
           <NumberField
             label="Média do 1º semestre"
+            helper="Escala de notas: 0 a 20"
             value={
               simulationInput
                 .first_sem_grade
@@ -205,6 +259,7 @@ export function SimulationForm() {
 
           <NumberField
             label="Aprovações no 2º semestre"
+            helper="Disciplinas aprovadas no período"
             value={
               simulationInput
                 .second_sem_approved
@@ -222,6 +277,7 @@ export function SimulationForm() {
 
           <NumberField
             label="Média do 2º semestre"
+            helper="Escala de notas: 0 a 20"
             value={
               simulationInput
                 .second_sem_grade
@@ -239,11 +295,16 @@ export function SimulationForm() {
         </div>
 
         <div className="mt-6 border-t border-slate-100 pt-6">
-          <p className="mb-4 text-sm font-medium text-slate-700">
+          <p className="text-sm font-medium text-slate-700">
             Situação financeira
           </p>
 
-          <div className="space-y-4">
+          <p className="mt-1 text-xs leading-5 text-slate-400">
+            Essas informações também fazem parte dos atributos utilizados
+            pelo modelo.
+          </p>
+
+          <div className="mt-5 space-y-4">
             <BooleanField
               label="Mensalidade em dia"
               value={
@@ -288,6 +349,19 @@ export function SimulationForm() {
           </div>
         </div>
 
+        <div className="mt-6 rounded-xl bg-slate-50 px-4 py-3">
+          <p className="text-xs font-semibold text-slate-700">
+            Por que o formulário não possui os 36 atributos?
+          </p>
+
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            Para tornar a simulação simples, apenas 9 características são
+            alteradas manualmente. Os demais atributos são preenchidos
+            automaticamente pelo backend com valores de referência da
+            base.
+          </p>
+        </div>
+
         {errorMessage && (
           <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {errorMessage}
@@ -322,6 +396,7 @@ export function SimulationForm() {
 
 interface NumberFieldProps {
   label: string;
+  helper: string;
   value: number;
   min: number;
   max: number;
@@ -333,6 +408,7 @@ interface NumberFieldProps {
 
 function NumberField({
   label,
+  helper,
   value,
   min,
   max,
@@ -358,6 +434,10 @@ function NumberField({
         }
         className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-950 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
       />
+
+      <span className="mt-1.5 block text-[11px] leading-4 text-slate-400">
+        {helper}
+      </span>
     </label>
   );
 }
@@ -432,7 +512,8 @@ function SimulationResultPanel({
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Preencha o perfil e clique em simular para visualizar o risco estimado de evasão.
+            Altere o perfil do estudante e clique em simular para
+            visualizar a probabilidade estimada de evasão.
           </p>
         </div>
       </div>
@@ -476,6 +557,10 @@ function SimulationResultPanel({
     riskStyles[
       result.risk.level
     ];
+
+  const thresholdDifference =
+    result.dropout_probability -
+    result.threshold;
 
   return (
     <div className="flex flex-col gap-5">
@@ -529,6 +614,36 @@ function SimulationResultPanel({
         </div>
       </section>
 
+      <section className="grid gap-4 sm:grid-cols-3">
+        <ResultMetric
+          label="Probabilidade"
+          value={formatProbability(
+            result.dropout_probability,
+          )}
+          description="Valor calculado pelo modelo"
+        />
+
+        <ResultMetric
+          label="Limiar"
+          value={formatProbability(
+            result.threshold,
+          )}
+          description="Ponto de corte para alerta"
+        />
+
+        <ResultMetric
+          label={
+            thresholdDifference >= 0
+              ? "Acima do limiar"
+              : "Abaixo do limiar"
+          }
+          value={formatDifference(
+            thresholdDifference,
+          )}
+          description="Distância até o ponto de corte"
+        />
+      </section>
+
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-start gap-3">
           {result.alert ? (
@@ -546,10 +661,32 @@ function SimulationResultPanel({
 
             <p className="mt-1 text-sm leading-6 text-slate-500">
               {result.alert
-                ? "A probabilidade ultrapassou o limiar de 50%, indicando prioridade para acompanhamento."
-                : "A probabilidade ficou abaixo do limiar definido para intervenção."}
+                ? `A probabilidade calculada foi ${formatProbability(
+                    result.dropout_probability,
+                  )}, acima do limiar de ${formatProbability(
+                    result.threshold,
+                  )}.`
+                : `A probabilidade calculada foi ${formatProbability(
+                    result.dropout_probability,
+                  )}, abaixo do limiar de ${formatProbability(
+                    result.threshold,
+                  )}.`}
             </p>
           </div>
+        </div>
+
+        <div className="mt-5 border-t border-slate-100 pt-4">
+          <div className="flex items-center gap-2">
+            <Target className="size-4 text-slate-500" />
+
+            <p className="text-xs font-semibold text-slate-700">
+              Regra utilizada
+            </p>
+          </div>
+
+          <p className="mt-2 font-mono text-xs text-slate-500">
+            probabilidade ≥ 50% → alerta
+          </p>
         </div>
       </section>
 
@@ -559,8 +696,13 @@ function SimulationResultPanel({
         </p>
 
         <h2 className="mt-1 text-xl font-semibold text-slate-950">
-          Sinais observados
+          Sinais auxiliares do perfil
         </h2>
+
+        <p className="mt-2 text-xs leading-5 text-slate-400">
+          Regras simples ajudam a destacar características do perfil
+          informado.
+        </p>
 
         <div className="mt-5 space-y-3">
           {result.signals.length >
@@ -592,13 +734,47 @@ function SimulationResultPanel({
         </div>
 
         <p className="mt-5 border-t border-slate-100 pt-4 text-xs leading-5 text-slate-400">
-          Os sinais ajudam a interpretar o perfil informado e não representam causalidade individual.
+          Esses sinais são apenas recursos auxiliares de interpretação.
+          A probabilidade final é calculada pelo modelo a partir do
+          conjunto completo de atributos e não por essas regras isoladas.
         </p>
       </section>
 
+      <div className="rounded-xl bg-slate-50 px-4 py-3">
+        <p className="text-xs text-slate-500">
+          Modelo utilizado:{" "}
+          <span className="font-semibold text-slate-700">
+            {result.model.name}
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+interface ResultMetricProps {
+  label: string;
+  value: string;
+  description: string;
+}
+
+function ResultMetric({
+  label,
+  value,
+  description,
+}: ResultMetricProps) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <p className="text-xs text-slate-400">
-        Predição realizada com
-        {result.model.name}.
+        {label}
+      </p>
+
+      <p className="mt-2 text-xl font-semibold text-slate-950">
+        {value}
+      </p>
+
+      <p className="mt-1 text-xs leading-5 text-slate-500">
+        {description}
       </p>
     </div>
   );

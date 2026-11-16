@@ -1,0 +1,16 @@
+node_modules/
+.next/
+.vercel/
+
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.env
+.env.local
+.env.*.local
+
+.DS_Store
+Thumbs.db
